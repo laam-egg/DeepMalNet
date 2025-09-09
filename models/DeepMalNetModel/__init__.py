@@ -1,0 +1,2 @@
+from .TrainableDeepMalNetModel import TrainableDeepMalNetModel
+from .InferenceDeepMalNetModel import InferenceDeepMalNetModel

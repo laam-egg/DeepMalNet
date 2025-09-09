@@ -1,0 +1,16 @@
+name: DeepMalNet
+channels:
+  - pytorch
+  - conda-forge
+dependencies:
+  - python=3.10
+  - numpy
+  - pandas
+  - scikit-learn
+  - matplotlib
+  - tqdm
+  - pip
+  - pip:
+      - torch       # CPU build; change to torch==2.4.0+cu124 if you want CUDA
+      - torchvision # not strictly needed, but good to have
+      - torchaudio  # same as above
