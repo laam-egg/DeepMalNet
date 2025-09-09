@@ -3,11 +3,11 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 class DeepMalNet_Mode:
-    TRAINING = 0
-    INFERENCE = 1
+    TRAINING = "training"
+    INFERENCE = "inference"
 
 def deepmalnet_hidden_layers(input_dim, units, dropout, mode):
-    # type: (int, int, float, int) -> list[nn.Module]
+    # type: (int, int, float, str) -> list[nn.Module]
     """
     Returns a list of neural network layers
     to be added to the DNN.
@@ -43,6 +43,10 @@ def deepmalnet_hidden_layers(input_dim, units, dropout, mode):
 
 class DeepMalNetNNModule(nn.Module):
     def __init__(self, input_dim, mode, dropout=0.01):
+        print(f"Establishing DeepMalNetNNModule ---")
+        print(f"    - mode      =   {mode}")
+        print(f"    - dropout   =   {dropout}")
+        print(f"---")
         super(DeepMalNetNNModule, self).__init__()
         
         layers = []
@@ -57,7 +61,13 @@ class DeepMalNetNNModule(nn.Module):
 
         # Output
         layers.append(nn.Linear(previous_dim, 1))
-        layers.append(nn.Sigmoid())
+        print(f"({previous_dim}) -> Fully-connected -> (1)", end="")
+
+        if mode == DeepMalNet_Mode.INFERENCE:
+            layers.append(nn.Sigmoid())
+            print(f" -> Sigmoid")
+        else:
+            print(f" -> (raw score)")
         
         # Pack into Sequential
         self.model = nn.Sequential(*layers)

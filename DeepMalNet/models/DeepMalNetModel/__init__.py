@@ -1,0 +1,2 @@
+from .InferenceDeepMalNetModel import InferenceDeepMalNetModel
+from .DeepMalNetNNModule import DeepMalNetNNModule, DeepMalNet_Mode

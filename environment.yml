@@ -14,3 +14,10 @@ dependencies:
       - torch       # CPU build; change to torch==2.4.0+cu124 if you want CUDA
       - torchvision # not strictly needed, but good to have
       - torchaudio  # same as above
+      - lmdb==1.7.3
+      - baker==1.3
+      - msgpack==1.1.1
+      - msgpack-numpy==0.4.8
+      - git+https://github.com/pefe-system/pefe-ief.git@2cc37b681211d7133561291b968c67e976625b9d#egg=pefe_ief
+      - git+https://github.com/pefe-system/pefe-common.git@ae4c01d8469a731ed9680f3c55e6e740ddbffa00#egg=pefe_common
+      - git+https://github.com/FutureComputing4AI/EMBER2024@0ef753e81d98bf209f71b03cd331dfc190b5b54d#egg=thrember
