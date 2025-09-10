@@ -2,8 +2,9 @@ import baker
 from .training import Trainer
 
 @baker.command
-def train():
-    trainer = Trainer()
+def train(lmdb_path):
+    # type: (str) -> None
+    trainer = Trainer(lmdb_path)
     trainer.train()
     trainer.save()
 

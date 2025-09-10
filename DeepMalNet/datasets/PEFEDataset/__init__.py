@@ -1,10 +1,10 @@
 from torch.utils.data import DataLoader, random_split
 from .LMDBDatasetControlledByPytorch import LMDBDatasetControlledByPytorch
-from ...config import config
 
 class PEFEDataset:
-    def __init__(self):
-        self.lmdb_path = config["ember2024_lmdb_path"]
+    def __init__(self, lmdb_path):
+        # type: (PEFEDataset, str) -> None
+        self.lmdb_path = lmdb_path
         self.dataset = LMDBDatasetControlledByPytorch(self.lmdb_path)
 
         self.train_size = int(0.8 * len(self.dataset))

@@ -8,10 +8,11 @@ import torch.optim as optim
 from tqdm import trange
 
 class Trainer:
-    def __init__(self):
+    def __init__(self, lmdb_path):
+        # type: (Trainer, str) -> None
         print(f"Initializing model training...")
         self.NUM_EPOCHS = 128
-        self.dataset = PEFEDataset()
+        self.dataset = PEFEDataset(lmdb_path)
         self.model = DeepMalNetNNModule(NUM_FEATURES, DeepMalNet_Mode.TRAINING)
         self.transfer_model_to_accelerator()
         self.initialize_loss_and_optimizer()
