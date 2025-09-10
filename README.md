@@ -93,6 +93,10 @@ cd $PROJECT_ROOT
 python ./EMBER2024/vectorize_dataset_to_lmdb.py /path/to/lmdb/dir
 ```
 
+This process may be time-consuming.
+It took 2 hours 41 mins to complete
+on an Intel i5-8500 CPU.
+
 ## Training
 
 ```sh
