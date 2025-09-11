@@ -11,7 +11,7 @@ def train(lmdb_path):
     trainer = Trainer(lmdb_path)
     trainer.load_last_checkpoint(CHECKPOINTS_DIR)
     trainer.train()
-    trainer.save()
+    trainer.save(CHECKPOINTS_DIR)
 
 @baker.command
 def infer():
