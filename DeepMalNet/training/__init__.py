@@ -77,6 +77,7 @@ class Trainer:
             batch_size=256,
             shuffle=True,
             num_workers=NUM_WORKERS,
+            persistent_workers=True,
         )
 
         cv_loader = DataLoader(
@@ -84,6 +85,7 @@ class Trainer:
             batch_size=256,
             shuffle=False,
             num_workers=NUM_WORKERS,
+            persistent_workers=True,
         )
 
         for i_run in range(self.NUM_EPOCHS_TO_RUN_THIS_TIME):

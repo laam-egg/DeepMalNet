@@ -17,13 +17,7 @@ class PEFEDataset(Dataset):
 
         self.lmdb_path = lmdb_path
 
-        self.env = lmdb.open(
-            lmdb_path,
-            readonly=True,
-            lock=False,
-            readahead=False,
-            max_readers=65536,
-        )
+        self.env = None
 
         self.keys_file_path = f"{lmdb_path}/splits/{split.lower()}_keys.txt"
         gc.collect()
@@ -31,12 +25,25 @@ class PEFEDataset(Dataset):
             self.keys = eval("[" + keys_file.read() + "]") # type: list[bytes]
         gc.collect()
     
+    def _init_db(self):
+        if self.env is None:
+            self.env = lmdb.open(
+                self.lmdb_path,
+                readonly=True,
+                lock=False,
+                readahead=False,
+                meminit=False,
+                max_readers=65536,
+            )
+
     def __len__(self):
         return len(self.keys)
     
     def __getitem__(self, idx):
+        self._init_db()
+
         key = self.keys[idx]
-        with self.env.begin() as txn:
+        with self.env.begin(write=False) as txn:
             raw_value = txn.get(key)
         payload = msgpack.unpackb(raw_value, raw=False)
 
@@ -47,3 +54,7 @@ class PEFEDataset(Dataset):
         y = torch.tensor(label, dtype=torch.float32)
 
         return X, y
+    
+    def __del__(self):
+        if self.env is not None:
+            self.env.close()
