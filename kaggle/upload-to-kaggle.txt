@@ -1,0 +1,2 @@
+cd $DIRECTORY_CONTAINING_DATA_MDB
+kaggle datasets create -p ./ember2024_train.lmdb

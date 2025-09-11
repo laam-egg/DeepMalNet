@@ -67,6 +67,13 @@ The dataset comes in `jsonl` format,
 so you need to convert them to feature
 vectors.
 
+In fact I have done the conversion
+and uploaded the LMDB database to
+Kaggle at <???>
+
+Following are the steps in case you
+want to do it yourself.
+
 First, download them if you haven't already:
 
 ```sh
@@ -93,11 +100,25 @@ cd $PROJECT_ROOT
 python ./EMBER2024/vectorize_dataset_to_lmdb.py /path/to/lmdb/dir
 ```
 
-This process may be time-consuming.
+This process is time-consuming.
 It took 2 hours 41 mins to complete
-on an Intel i5-8500 CPU.
+on my Intel i5-8500 CPU.
 
 ## Training
+
+You must have at least 40 GB of RAM. In case
+your Linux system does not have sufficient
+real RAM, allocate more swap space (in my
+case that still fails) or run it on
+Kaggle. I have uploaded the converted LMDB
+database (from EMBER2024 dataset) to Kaggle - link
+is in the previous section. You can run
+[this notebook](./kaggle/train-on-kaggle.ipynb)
+on Kaggle with that dataset mounted in,
+to train the model.
+
+Otherwise, here is the command to train the
+DeepMalNet model - offline:
 
 ```sh
 conda activate DeepMalNet
@@ -105,8 +126,6 @@ cd $PROJECT_ROOT
 
 python -m DeepMalNet train /path/to/train/dataset/lmdb/dir
 ```
-
-**TODO: run it???**
 
 Trained DNN checkpoints will be saved in
 the directory `$PROJECT_ROOT/checkpoints`.
