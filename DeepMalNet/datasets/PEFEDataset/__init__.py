@@ -1,18 +1,49 @@
-from torch.utils.data import DataLoader, random_split
-from .LMDBDatasetControlledByPytorch import LMDBDatasetControlledByPytorch
+import torch
+from torch.utils.data import Dataset
+import lmdb
+import gc
+import msgpack
+import msgpack_numpy
+# import numpy as np
+# from numpy import ndarray
 
-class PEFEDataset:
-    def __init__(self, lmdb_path):
+msgpack_numpy.patch()
+
+class PEFEDataset(Dataset):
+    def __init__(self, lmdb_path, split="train"):
         # type: (PEFEDataset, str) -> None
-        self.lmdb_path = lmdb_path
-        self.dataset = LMDBDatasetControlledByPytorch(self.lmdb_path)
 
-        self.train_size = int(0.8 * len(self.dataset))
-        self.cv_size = len(self.dataset) - self.train_size
-        self.train_dataset, self.cv_dataset = random_split(
-            self.dataset,
-            [self.train_size, self.cv_size],
+        super(PEFEDataset, self).__init__()
+
+        self.lmdb_path = lmdb_path
+
+        self.env = lmdb.open(
+            lmdb_path,
+            readonly=True,
+            lock=False,
+            readahead=False,
+            max_readers=65536,
         )
 
-        self.train_loader = DataLoader(self.train_dataset, batch_size=128, shuffle=True)
-        self.cv_loader = DataLoader(self.cv_dataset, batch_size=256, shuffle=False)
+        self.keys_file_path = f"{lmdb_path}/splits/{split.lower()}_keys.txt"
+        gc.collect()
+        with open(self.keys_file_path, 'r') as keys_file:
+            self.keys = eval("[" + keys_file.read() + "]") # type: list[bytes]
+        gc.collect()
+    
+    def __len__(self):
+        return len(self.keys)
+    
+    def __getitem__(self, idx):
+        key = self.keys[idx]
+        with self.env.begin() as txn:
+            raw_value = txn.get(key)
+        payload = msgpack.unpackb(raw_value, raw=False)
+
+        label = payload['lb']
+        features = payload['ef']
+
+        X = torch.tensor(features, dtype=torch.float32)
+        y = torch.tensor(label, dtype=torch.float32)
+
+        return X, y

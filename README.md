@@ -1,5 +1,19 @@
 # DeepMalNet Implementation
 
+- [DeepMalNet Implementation](#deepmalnet-implementation)
+  - [Credit](#credit)
+  - [Setup](#setup)
+  - [Feature Extraction](#feature-extraction)
+    - [Extract from Custom PE Files](#extract-from-custom-pe-files)
+    - [Use the EMBER2024 Dataset](#use-the-ember2024-dataset)
+  - [Split Datasets](#split-datasets)
+    - [Pre-splits](#pre-splits)
+    - [Split it yourself](#split-it-yourself)
+  - [Training](#training)
+    - [On Kaggle](#on-kaggle)
+    - [On Local Machine](#on-local-machine)
+  - [Quick Inference](#quick-inference)
+
 ## Credit
 
 DeepMalNet is proposed in this paper:
@@ -69,7 +83,7 @@ vectors.
 
 In fact I have done the conversion
 and uploaded the LMDB database to
-Kaggle at <???>
+Kaggle at <https://www.kaggle.com/datasets/laamegg/ember2024-lmdb>.
 
 Following are the steps in case you
 want to do it yourself.
@@ -104,21 +118,101 @@ This process is time-consuming.
 It took 2 hours 41 mins to complete
 on my Intel i5-8500 CPU.
 
+## Split Datasets
+
+The dataset resulted from the
+above feature extraction procedure
+must be split into train, CV and
+test subsets.
+
+You wouldn't want to load the
+whole dataset to memory and split
+it there, since the dataset is
+huge and three dozens of GiB
+worth of RAM (or maybe more)
+is needed to hold that much
+data.
+
+### Pre-splits
+
+If you used the EMBER2024 dataset
+in the feature extraction procedure,
+now you have an LMDB database containing
+the vectorized EMBER2024 dataset.
+
+You could use the pre-splits
+in the given Kaggle dataset
+(under the `splits` directory).
+Which means, you essentially don't
+need to do anything further, since
+the splits are already there in
+their expected place.
+
+### Split it yourself
+
+If you used a custom dataset
+in the feature extraction procedure,
+then you need to split the LMDB
+database yourself.
+
+You could use the script under
+`$PROJECT_ROOT/lmdb/split.py`
+to split an LMDB database into
+multiple parts. For example,
+if you want 80% train + 10% CV + 10% test:
+
+```sh
+conda activate DeepMalNet
+# or a more minimal but still compatible
+# venv/conda environment - see the docs
+# inside the script for information
+
+cd $PROJECT_ROOT
+python ./lmdb/split.py /path/to/lmdb/dir /path/to/splits/output/dir 0.8 0.1 0.1
+```
+
+It then outputs 3 files to the specified
+splits output directory, each of which
+contains the LMDB keys of the corresponding
+splits. Read the docs inside the script
+for information. In the end, remember to
+rename the files from
+
+    p0.txt
+    p1.txt
+    p2.txt
+
+to
+
+    train_keys.txt
+    cv_keys.txt
+    test_keys.txt
+
+and move them to the directory
+
+    /<LMDB_DIR>/splits/
+
+so that we could use it in the Training
+phase below.
+
 ## Training
 
-You must have at least 40 GB of RAM. In case
-your Linux system does not have sufficient
-real RAM, allocate more swap space (in my
-case that still fails) or run it on
-Kaggle. I have uploaded the converted LMDB
+### On Kaggle
+
+I have uploaded the converted LMDB
 database (from EMBER2024 dataset) to Kaggle - link
 is in the previous section. You can run
 [this notebook](./kaggle/train-on-kaggle.ipynb)
 on Kaggle with that dataset mounted in,
-to train the model.
+to train the model. I have also uploaded
+and run it here myself: **TODO: Notebook link???**.
 
-Otherwise, here is the command to train the
-DeepMalNet model - offline:
+If you have a custom dataset or custom
+splits, be sure to upload them and mount
+correctly, i.e. following the same directory
+structure as that Kaggle dataset I've uploaded.
+
+### On Local Machine
 
 ```sh
 conda activate DeepMalNet

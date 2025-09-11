@@ -57,7 +57,7 @@ class DeepMalNetNNModule(nn.Module):
             layers.extend(
                 deepmalnet_hidden_layers(previous_dim, hidden_dim, dropout, mode)
             )
-            previous_dim = input_dim
+            previous_dim = hidden_dim
 
         # Output
         layers.append(nn.Linear(previous_dim, 1))
