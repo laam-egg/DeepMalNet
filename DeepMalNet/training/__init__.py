@@ -26,7 +26,7 @@ class Trainer:
         self.last_epoch = 0
         self.last_loss = float('nan')
     
-    CHECKPOINT_FILENAME_PATTERN = re.compile(r"epoch(\d+)_(\d+\.\d+)\.pth") # e.g. epoch32_123456.789.pth
+    CHECKPOINT_FILENAME_PATTERN = re.compile(r"^epoch(\d+)_(\d+\.\d+)\.pth$") # e.g. epoch32_123456.789.pth
     def load_last_checkpoint(self, checkpoint_dir):
         """
         Load the checkpoint with the highest epoch. 
