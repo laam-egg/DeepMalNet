@@ -12,6 +12,7 @@ from torch.utils.data import DataLoader
 import os
 import re
 import time
+from ..utils import hash_file
 
 class Trainer:
     def __init__(self, lmdb_path, num_epochs=4):
@@ -142,6 +143,8 @@ class Trainer:
             f"epoch{self.last_epoch}_{time.time()}.pth",
         )
 
+        CHECKPOINT_HASH_PATH = CHECKPOINT_PATH + ".sha256.txt"
+
         torch.save(
             {
                 "model_state_dict": self.model.state_dict(),
@@ -154,6 +157,11 @@ class Trainer:
         )
 
         print(f"[INFO] Saved checkpoint: '{CHECKPOINT_PATH}'")
+
+        h = hash_file(CHECKPOINT_PATH, algorithm="sha256")
+        print(f"[INFO] Checkpoint SHA256: {h}")
+        with open(CHECKPOINT_HASH_PATH, 'w') as hf:
+            hf.write(h)
 
     def initialize_loss_and_optimizer(self):
         self.criterion = nn.BCEWithLogitsLoss()   # assumes model output is raw score (not sigmoid)
