@@ -61,6 +61,8 @@ class Trainer:
         best = max(candidates, key=lambda x: (x[0], x[1]))
         epoch, t, path = best
 
+        print(f"[INFO] Loading checkpoint: {path}")
+
         checkpoint = torch.load(path, map_location=self.DEVICE_NAME)
         self.model.load_state_dict(checkpoint["model_state_dict"])
         if "optimizer_state_dict" in checkpoint:
