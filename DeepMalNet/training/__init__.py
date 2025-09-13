@@ -30,7 +30,7 @@ class Trainer:
         self.last_loss = float('nan')
     
     CHECKPOINT_FILENAME_PATTERN = re.compile(r"^epoch(\d+)_(\d+\.\d+)\.pth$") # e.g. epoch32_123456.789.pth
-    def load_last_checkpoint(self, checkpoint_dir):
+    def load_last_checkpoint(self, checkpoint_dir, sanity_check_if_found=False):
         """
         Load the checkpoint with the highest epoch. 
         If multiple have the same epoch, pick the one with the latest TIME value.
@@ -75,6 +75,9 @@ class Trainer:
 
         print(f"[INFO] Loaded checkpoint '{os.path.basename(path)}' "
               f"(epoch={epoch}, time={t}, loss={self.last_loss:.4f})")
+        
+        if sanity_check_if_found:
+            self.sanity_check()
     
     def sanity_check(self):
         print(f"Checking model sanity...")

@@ -10,8 +10,10 @@ def train(lmdb_path):
 
     CHECKPOINTS_DIR = os.path.join(os.path.dirname(sys.argv[0]), "../checkpoints")
     trainer = Trainer(lmdb_path)
-    trainer.load_last_checkpoint(CHECKPOINTS_DIR)
-    trainer.sanity_check() # optional
+    trainer.load_last_checkpoint(
+        CHECKPOINTS_DIR,
+        sanity_check_if_found=True, # optional
+    )
     trainer.train()
     trainer.save(CHECKPOINTS_DIR)
     trainer.sanity_check() # optional
