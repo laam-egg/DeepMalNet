@@ -12,7 +12,8 @@ from torch.utils.data import DataLoader
 import os
 import re
 import time
-from ..utils import hash_file
+from ..utils import hash_file, model_sanity_check, select_device
+from ..utils.loss import FocalLoss
 
 class Trainer:
     def __init__(self, lmdb_path, num_epochs=4):
@@ -21,8 +22,10 @@ class Trainer:
         self.NUM_EPOCHS_TO_RUN_THIS_TIME = num_epochs
         self.lmdb_path = lmdb_path
         self.model = DeepMalNetNNModule(NUM_FEATURES, DeepMalNet_Mode.TRAINING)
-        self.transfer_model_to_accelerator()
-        self.initialize_loss_and_optimizer()
+        self.DEVICE_NAME = select_device()
+        self._transfer_model_to_accelerator()
+        self._initialize_loss_and_optimizer()
+        self._create_data_loaders()
         self.last_epoch = 0
         self.last_loss = float('nan')
     
@@ -72,25 +75,15 @@ class Trainer:
 
         print(f"[INFO] Loaded checkpoint '{os.path.basename(path)}' "
               f"(epoch={epoch}, time={t}, loss={self.last_loss:.4f})")
+    
+    def sanity_check(self):
+        print(f"Checking model sanity...")
+        model_sanity_check(self.model, self.cv_loader, self.DEVICE_NAME)
+        print(f"Checking model sanity: Done.")
 
     def train(self):
-        NUM_WORKERS = max(1, min(4, os.cpu_count() or 1))
-
-        train_loader = DataLoader(
-            PEFEDataset(self.lmdb_path, "train"),
-            batch_size=256,
-            shuffle=True,
-            num_workers=NUM_WORKERS,
-            persistent_workers=True,
-        )
-
-        cv_loader = DataLoader(
-            PEFEDataset(self.lmdb_path, "cv"),
-            batch_size=256,
-            shuffle=False,
-            num_workers=NUM_WORKERS,
-            persistent_workers=True,
-        )
+        train_loader = self.train_loader
+        cv_loader = self.cv_loader
 
         for i_run in range(self.NUM_EPOCHS_TO_RUN_THIS_TIME):
             self.last_epoch += 1
@@ -108,6 +101,10 @@ class Trainer:
                 logits = self.model(X)
                 loss = self.criterion(logits, y)
                 loss.backward()
+
+                # Preventing runaway updates with gradient clipping
+                torch.nn.utils.clip_grad_norm_(self.model.parameters(), max_norm=1.0)
+
                 self.optimizer.step()
 
                 total_loss += loss.item()
@@ -120,20 +117,35 @@ class Trainer:
 
             self.model.eval()
             correct, total = 0, 0
+            TP, FP, FN, TN = 0, 0, 0, 0
 
             with torch.no_grad():
                 for X, y in tqdm(cv_loader, desc=f"Epoch {epoch} (run {i_run+1}/{self.NUM_EPOCHS_TO_RUN_THIS_TIME}) :: V"):
                     X, y = (
                         X.to(self.DEVICE_NAME),
-                        y.to(self.DEVICE_NAME).unsqueeze(1),
+                        y.to(self.DEVICE_NAME),
                     )
                     logits = self.model(X)
-                    preds = (torch.sigmoid(logits) > 0.5).long()
-                    correct += (preds.squeeze(1) == y.long()).sum().item()
-                    total += y.size(0)
-            acc = correct / total if total > 0 else 0.0
+                    preds = (torch.sigmoid(logits) > 0.5).long().squeeze(1)
+                    y = y.long()
 
-            print(f"Epoch {epoch} (run {i_run+1}/{self.NUM_EPOCHS_TO_RUN_THIS_TIME}) : train loss={avg_loss:.4f}, val acc={acc:.4f}")
+                    correct += (preds == y).sum().item()
+                    total += y.size(0)
+                    TP += ((preds == 1) & (y == 1)).sum().item()
+                    FP += ((preds == 1) & (y == 0)).sum().item()
+                    FN += ((preds == 0) & (y == 1)).sum().item()
+                    TN += ((preds == 0) & (y == 0)).sum().item()
+            
+            acc = correct / total if total > 0 else 0.0
+            precision = TP / (TP + FP) if (TP + FP) > 0 else 0.0
+            recall    = TP / (TP + FN) if (TP + FN) > 0 else 0.0
+            _pPLUSr = (precision + recall)
+            f1 = (2 * precision * recall) / _pPLUSr if _pPLUSr > 0 else 0.0
+
+            print(f"Epoch {epoch} (run {i_run+1}/{self.NUM_EPOCHS_TO_RUN_THIS_TIME}) : train loss={avg_loss:.4f} | val acc={acc:.4f}, f1={f1:.4f}, "
+                + f"precision={precision:.4f}, recall={recall:.4f}, TP={TP} FP={FP} FN={FN} TN={TN}, "
+                + f"correct={correct}, total={total}"
+            )
     
     def save(self, checkpoints_dir):
         # type: (Trainer, str) -> None
@@ -165,12 +177,19 @@ class Trainer:
         with open(CHECKPOINT_HASH_PATH, 'w') as hf:
             hf.write(h)
 
-    def initialize_loss_and_optimizer(self):
-        self.criterion = nn.BCEWithLogitsLoss()   # assumes model output is raw score (not sigmoid)
-        self.optimizer = optim.Adam(self.model.parameters(), lr=1e-3)
+    def _initialize_loss_and_optimizer(self):
+        num_neg = 56.81
+        num_pos = 43.19
+        weight = torch.tensor([num_neg / num_pos], device=self.DEVICE_NAME)
+        # assumes model output is raw score (not sigmoid)
+        # self.criterion = nn.BCEWithLogitsLoss(
+        #     pos_weight=weight,
+        # )
+        self.criterion = FocalLoss()
+        self.optimizer = optim.Adam(self.model.parameters(), lr=1e-4)
 
-    def transfer_model_to_accelerator(self):
-        DEVICE_NAME = "cuda:0"
+    def _transfer_model_to_accelerator(self):
+        DEVICE_NAME = self.DEVICE_NAME
         try:
             self.model.to(DEVICE_NAME)
         except Exception as e:
@@ -180,3 +199,22 @@ class Trainer:
 
         self.DEVICE_NAME = DEVICE_NAME
         print(f"Operating on device: {self.DEVICE_NAME}")
+    
+    def _create_data_loaders(self):
+        NUM_WORKERS = max(1, min(4, os.cpu_count() or 1))
+
+        self.train_loader = DataLoader(
+            PEFEDataset(self.lmdb_path, "train"),
+            batch_size=256,
+            shuffle=True,
+            num_workers=NUM_WORKERS,
+            persistent_workers=True,
+        )
+
+        self.cv_loader = DataLoader(
+            PEFEDataset(self.lmdb_path, "cv"),
+            batch_size=256,
+            shuffle=False,
+            num_workers=NUM_WORKERS,
+            persistent_workers=True,
+        )

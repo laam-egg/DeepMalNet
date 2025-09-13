@@ -26,8 +26,8 @@ def deepmalnet_hidden_layers(input_dim, units, dropout, mode):
     print(f"({input_dim}) -> Fully-connected")
     print(f"    -> ({units}) -> ReLU")
     print(f"    -> ({units}) -> Batch Normalization")
-    if mode == DeepMalNet_Mode.TRAINING:
-        print(f"    -> ({units}) -> Dropout")
+    # if mode == DeepMalNet_Mode.TRAINING:
+    print(f"    -> ({units}) -> Dropout")
     print(f"    -> ({units})")
     print()
 
@@ -35,10 +35,11 @@ def deepmalnet_hidden_layers(input_dim, units, dropout, mode):
         nn.Linear(input_dim, units),
         nn.ReLU(),
         nn.BatchNorm1d(units),
-        *(
-            [nn.Dropout(dropout)] if mode == DeepMalNet_Mode.TRAINING
-            else []
-        ),
+        # *(
+        #     [nn.Dropout(dropout)] if mode == DeepMalNet_Mode.TRAINING
+        #     else []
+        # ),
+        nn.Dropout(dropout),
     ]
 
 class DeepMalNetNNModule(nn.Module):

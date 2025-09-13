@@ -25,7 +25,21 @@ class InferenceDeepMalNetModel(AbstractModel):
 
     def do_load(self, model_path):
         self._model = DeepMalNetNNModule(NUM_FEATURES, DeepMalNet_Mode.INFERENCE)
-        self._model.load_state_dict(torch.load(model_path))
+
+        try:
+            model_data = torch.load(model_path)
+        except Exception as e:
+            if "Attempting to deserialize object on a CUDA device" in str(e):
+                model_data = torch.load(model_path, map_location=torch.device('cpu'))
+            else:
+                raise
+        
+        try:
+            state_dict = model_data["model_state_dict"]
+        except KeyError:
+            state_dict = model_data
+
+        self._model.load_state_dict(state_dict)
         self._model.eval()
 
         DEVICE_NAME = "cuda:0"

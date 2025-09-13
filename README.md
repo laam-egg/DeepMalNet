@@ -13,6 +13,7 @@
     - [On Kaggle](#on-kaggle)
     - [On Local Machine](#on-local-machine)
   - [Quick Inference](#quick-inference)
+  - [Mass Inference and Evaluation](#mass-inference-and-evaluation)
 
 ## Credit
 
@@ -148,6 +149,12 @@ need to do anything further, since
 the splits are already there in
 their expected place.
 
+The distribution of the splits:
+
+    train_keys.txt      51.41% zero, 48.59% one
+    cv_keys.txt         44.42% zero, 55.58% one
+    test_keys.txt       43.19% zero, 56.81% one
+
 ### Split it yourself
 
 If you used a custom dataset
@@ -175,8 +182,8 @@ It then outputs 3 files to the specified
 splits output directory, each of which
 contains the LMDB keys of the corresponding
 splits. Read the docs inside the script
-for information. In the end, remember to
-rename the files from
+for information. In the end, **remember to**
+**rename the files** from
 
     p0.txt
     p1.txt
@@ -195,6 +202,21 @@ and move them to the directory
 so that we could use it in the Training
 phase below.
 
+To view the distribution of each of
+those splits (i.e. the number of
+zero- and one-labelled samples in
+each of the splits):
+
+```sh
+conda activate DeepMalNet
+# or a more minimal but still compatible
+# venv/conda environment - see the docs
+# inside the script for information
+
+cd $PROJECT_ROOT
+python ./lmdb/split-distribution.py /path/to/lmdb/dir /path/to/splits/output/dir
+```
+
 ## Training
 
 ### On Kaggle
@@ -205,7 +227,7 @@ is in the previous section. You can run
 [this notebook](./kaggle/train-on-kaggle.ipynb)
 on Kaggle with that dataset mounted in,
 to train the model. I have also uploaded
-and run it here myself: **TODO: Notebook link???**.
+and run it here myself: <https://www.kaggle.com/code/laamegg/train-on-kaggle>.
 
 If you have a custom dataset or custom
 splits, be sure to upload them and mount
@@ -229,11 +251,7 @@ current timestamp to avoid conflicts.
 I also trained some model checkpoints
 in that directory.
 
-**TODO: `pefe-ief-viz` ???**
-
 ## Quick Inference
-
-**TODO: `@baker.command def infer():` ???**
 
 If you want to test the model quickly
 on a file or all files under a
@@ -242,8 +260,12 @@ directory (scanned recursively):
 ```sh
 conda activate DeepMalNet
 
-python -m DeepMalNet infer /path/to/file/or/dir
+python -m DeepMalNet infer /path/to/a/model/checkpoint /path/to/file/or/dir
 ```
 
 The results will be printed directly
 to the console.
+
+## Mass Inference and Evaluation
+
+**TODO: `pefe-ief-viz` ???**
