@@ -181,16 +181,21 @@ class Trainer:
             hf.write(h)
 
     def _initialize_loss_and_optimizer(self):
-        num_neg = 56.81
-        num_pos = 43.19
-        weight = torch.tensor([num_neg / num_pos], device=self.DEVICE_NAME)
+        # num_neg = 56.81
+        # num_pos = 43.19
+        # weight = torch.tensor([num_neg / num_pos], device=self.DEVICE_NAME)
         # assumes model output is raw score (not sigmoid)
         # self.criterion = nn.BCEWithLogitsLoss(
         #     pos_weight=weight,
         # )
         self.criterion = FocalLoss()
-        self.optimizer = optim.Adam(self.model.parameters(), lr=1e-4)
-
+        # self.optimizer = optim.Adam(self.model.parameters(), lr=1e-4)
+        self.optimizer = optim.AdamW(
+            self.model.parameters(),
+            lr=2e-4,
+            weight_decay=1e-2,
+        )
+    
     def _transfer_model_to_accelerator(self):
         DEVICE_NAME = self.DEVICE_NAME
         try:

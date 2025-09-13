@@ -246,10 +246,10 @@ python -m DeepMalNet train /path/to/train/dataset/lmdb/dir
 Trained DNN checkpoints will be saved in
 the directory `$PROJECT_ROOT/checkpoints`.
 The checkpoint file is named after the
-current timestamp to avoid conflicts.
+current timestamp and the number of trained
+epochs, to avoid conflicts.
 
-I also trained some model checkpoints
-in that directory.
+**TODO: pretrained checkpoints for others to experiment with ???**
 
 ## Quick Inference
 
