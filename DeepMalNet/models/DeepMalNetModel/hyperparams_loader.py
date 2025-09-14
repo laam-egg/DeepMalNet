@@ -25,13 +25,12 @@ class ScalingHyperparams:
     
     @classmethod
     def _real_load_default(CLS):
-        import torch
         import numpy as np
         import importlib.resources as pkg_resources
 
         with pkg_resources.path(hyperparams, "scaling.npz") as hyperparams_path:
             data = np.load(hyperparams_path)
-            mean = torch.from_numpy(data["mean"]).float()
-            std = torch.from_numpy(data["std"]).float()
+            mean = data["mean"]
+            std = data["std"]
 
         return CLS(mean=mean, std=std)

@@ -1,2 +1,4 @@
 cd $DIRECTORY_CONTAINING_DATA_MDB
 kaggle datasets create -p ./ember2024_train.lmdb
+# to update dataset:
+kaggle datasets version -p ./ember2024_train.lmdb -m "update message"

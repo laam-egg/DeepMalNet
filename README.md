@@ -6,7 +6,6 @@
   - [Feature Extraction](#feature-extraction)
     - [Extract from Custom PE Files](#extract-from-custom-pe-files)
     - [Use the EMBER2024 Dataset](#use-the-ember2024-dataset)
-  - [Hyperparameters: Scaling](#hyperparameters-scaling)
   - [Split Datasets](#split-datasets)
     - [Pre-splits](#pre-splits)
     - [Split it yourself](#split-it-yourself)
@@ -74,8 +73,48 @@ from custom PE files, have a look at
 [this `pefe-agent` implementation](https://github.com/laam-egg/EMBER2024?tab=readme-ov-file#mass-feature-extraction)
 ([what is `pefe-agent`?](https://github.com/pefe-system/pefe-loader)).
 After that you will get a *LMDB database*
-that this program could read to train
-and evaluate the model.
+containing the feature vectors of all
+samples you specified.
+
+You then have to **rescale the dataset**,
+i.e. rescaling the feature vectors to
+normalize them, which is essential for
+the robustness of the training process.
+
+First, compute the scaling hyperparameters:
+
+```sh
+conda activate DeepMalNet
+cd $PROJECT_ROOT
+
+python lmdb/compute-scaling-hyperparameters.py \ 
+    $PATH_TO_THE_LMDB \ 
+    $PROJECT_ROOT/DeepMalNet/models/DeepMalNetModel/hyperparams/
+```
+
+Note that in the command above we had to output the
+params to
+
+    $PROJECT_ROOT/DeepMalNet/models/DeepMalNetModel/hyperparams/
+
+so that the same hyperparameters could be applied
+on inference after training.
+
+Now, rescale the dataset according to these
+hyperparameters:
+
+```sh
+conda activate DeepMalNet
+cd $PROJECT_ROOT
+
+python lmdb/rescale.py \ 
+    $PATH_TO_THE_LMDB \ 
+    $PATH_TO_THE_NEW_RESCALED_LMDB \ 
+    $PROJECT_ROOT/DeepMalNet/models/DeepMalNetModel/hyperparams/
+```
+
+**Use the new (rescaled) LMDB** for later
+phases e.g. splitting and training.
 
 ### Use the EMBER2024 Dataset
 
@@ -120,34 +159,10 @@ This process is time-consuming.
 It took 2 hours 41 mins to complete
 on my Intel i5-8500 CPU.
 
-## Hyperparameters: Scaling
-
-Scaling hyperparameters should be set once
-only, otherwise later training and inference
-will not produce consistent results.
-
-If you're using EMBER2024, the scaling
-hyperparams have been precomputed and are
-the default values in
-
-    $PROJECT_ROOT/DeepMalNet/models/DeepMalNetModel/hyperparams/
-
-If you wish to recompute these params,
-or you're using a custom dataset, be sure
-to run the following command to compute
-the params for consistency with your dataset.
-You could run it with the LMDB containing
-either the training entries alone, or everything
-(train + cv + test).
-
-```sh
-conda activate DeepMalNet
-cd $PROJECT_ROOT
-
-python lmdb/compute-scaling-hyperparameters.py \ 
-    $PATH_TO_YOUR_LMDB \ 
-    $PROJECT_ROOT/DeepMalNet/models/DeepMalNetModel/hyperparams/
-```
+When it finishes, you have a *LMDB database*
+containing the feature vectors of all samples.
+You then need to **rescale** the whole dataset
+by following the instructions in [the previous section](#extract-from-custom-pe-files).
 
 ## Split Datasets
 
@@ -181,9 +196,9 @@ their expected place.
 
 The distribution of the splits:
 
-    train_keys.txt      51.41% zero, 48.59% one
-    cv_keys.txt         44.42% zero, 55.58% one
-    test_keys.txt       43.19% zero, 56.81% one
+    train_keys.txt      51.41% zero, 48.59% one (80% overall)
+    cv_keys.txt         44.42% zero, 55.58% one (10% overall)
+    test_keys.txt       43.19% zero, 56.81% one (10% overall)
 
 ### Split it yourself
 
@@ -253,14 +268,17 @@ python ./lmdb/split-distribution.py /path/to/lmdb/dir /path/to/splits/output/dir
 
 I have uploaded the converted LMDB
 database (from EMBER2024 dataset) to Kaggle - link
-is in the previous section. You can run
-[this notebook](./kaggle/train-on-kaggle.ipynb)
+is [in the previous section](#use-the-ember2024-dataset).
+You can run the notebook in
+
+    $PROJECT_ROOT/kaggle/train-on-kaggle.ipynb
+
 on Kaggle with that dataset mounted in,
 to train the model. I have also uploaded
 and run it here myself: <https://www.kaggle.com/code/laamegg/train-on-kaggle>.
 
 If you have a custom dataset or custom
-splits, be sure to upload them and mount
+splits, be sure to upload and mount them
 correctly, i.e. following the same directory
 structure as that Kaggle dataset I've uploaded.
 
@@ -290,7 +308,7 @@ directory (scanned recursively):
 ```sh
 conda activate DeepMalNet
 
-python -m DeepMalNet infer /path/to/a/model/checkpoint /path/to/file/or/dir
+python -m DeepMalNet infer /path/to/a/model/checkpoint /path/to/file/or/dir/to/scan
 ```
 
 The results will be printed directly

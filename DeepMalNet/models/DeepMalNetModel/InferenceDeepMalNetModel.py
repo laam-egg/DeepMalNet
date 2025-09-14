@@ -6,11 +6,13 @@ import thrember
 import torch
 from copy import deepcopy
 import numpy as np
+from .hyperparams_loader import ScalingHyperparams
 
 class InferenceDeepMalNetModel(AbstractModel):
     def __init__(self):
         super().__init__()
         self._extractor = thrember.PEFeatureExtractor()
+        self.scaling_hyperparams = ScalingHyperparams.load_default()
     
     @property
     def extractor(self):
@@ -19,9 +21,12 @@ class InferenceDeepMalNetModel(AbstractModel):
     def do_extract_features(self, bytes):
         raw_features = self.extractor.raw_features(bytes)
         feature_vector = self.extractor.process_raw_features(raw_features)
-        return feature_vector
-    
 
+        mean = self.scaling_hyperparams.mean
+        std  = self.scaling_hyperparams.std
+        feature_vector = (feature_vector - mean) / std
+
+        return feature_vector
 
     def do_load(self, model_path):
         self._model = DeepMalNetNNModule(NUM_FEATURES, DeepMalNet_Mode.INFERENCE)
