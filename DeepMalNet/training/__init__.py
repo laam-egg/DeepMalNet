@@ -8,6 +8,7 @@ import torch.optim as optim
 from tqdm import tqdm
 
 from torch.utils.data import DataLoader
+from torch.optim.lr_scheduler import CosineAnnealingLR
 
 import os
 import re
@@ -67,9 +68,11 @@ class Trainer:
         print(f"[INFO] Loading checkpoint: {path}")
 
         checkpoint = torch.load(path, map_location=self.DEVICE_NAME)
-        self.model.load_state_dict(checkpoint["model_state_dict"])
+        self.model.load_model_data(checkpoint)
         if "optimizer_state_dict" in checkpoint:
             self.optimizer.load_state_dict(checkpoint["optimizer_state_dict"])
+        if "scheduler_state_dict" in checkpoint:
+            self.scheduler.load_state_dict(checkpoint["scheduler_state_dict"])
         self.last_epoch = checkpoint["epoch"]
         self.last_loss = checkpoint.get("loss", float("nan"))
 
@@ -115,6 +118,8 @@ class Trainer:
             avg_loss = total_loss / len(train_loader)
 
             self.last_loss = avg_loss
+
+            self.scheduler.step()
 
             # Validation
 
@@ -166,6 +171,7 @@ class Trainer:
             {
                 "model_state_dict": self.model.state_dict(),
                 "optimizer_state_dict": self.optimizer.state_dict(),
+                "scheduler_state_dict": self.scheduler.state_dict(),
                 "epoch": self.last_epoch,
                 "loss": self.last_loss,
             },
@@ -194,6 +200,11 @@ class Trainer:
             self.model.parameters(),
             lr=2e-4,
             weight_decay=1e-2,
+        )
+        self.scheduler = CosineAnnealingLR(
+            self.optimizer,
+            T_max=self.NUM_EPOCHS_TO_RUN_THIS_TIME,
+            eta_min=1e-6, # minimum learning rate
         )
     
     def _transfer_model_to_accelerator(self):

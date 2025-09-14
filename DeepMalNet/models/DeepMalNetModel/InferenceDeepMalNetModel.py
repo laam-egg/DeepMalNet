@@ -33,13 +33,8 @@ class InferenceDeepMalNetModel(AbstractModel):
                 model_data = torch.load(model_path, map_location=torch.device('cpu'))
             else:
                 raise
-        
-        try:
-            state_dict = model_data["model_state_dict"]
-        except KeyError:
-            state_dict = model_data
 
-        self._model.load_state_dict(state_dict)
+        self._model.load_model_data(model_data)
         self._model.eval()
 
         DEVICE_NAME = "cuda:0"

@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from .hyperparams_loader import ScalingHyperparams
 
 class DeepMalNet_Mode:
     TRAINING = "training"
@@ -44,12 +45,14 @@ def deepmalnet_hidden_layers(input_dim, units, dropout, mode):
 
 class DeepMalNetNNModule(nn.Module):
     def __init__(self, input_dim, mode, dropout=0.01):
+        # type: (DeepMalNetNNModule, int, str, float) -> None
+
         print(f"Establishing DeepMalNetNNModule ---")
         print(f"    - mode      =   {mode}")
         print(f"    - dropout   =   {dropout}")
         print(f"---")
         super(DeepMalNetNNModule, self).__init__()
-        
+
         layers = []
 
         hidden_dim_changes = [4608, 4096, 3584, 3072, 2560, 2048, 1536, 1024, 512, 128]
@@ -73,5 +76,38 @@ class DeepMalNetNNModule(nn.Module):
         # Pack into Sequential
         self.model = nn.Sequential(*layers)
 
+        # Temporary default
+        scaling_hyperparams = ScalingHyperparams.load_default()
+        mean = scaling_hyperparams.mean
+        std = scaling_hyperparams.std
+        self.register_buffer("mean", mean)
+        self.register_buffer("std", std)
+
     def forward(self, x):
+        x = (x - self.mean) / self.std
         return self.model(x)
+    
+    def load_model_data(self, model_data):
+        # type: (DeepMalNetNNModule, dict) -> None
+        state_dict = model_data["model_state_dict"]
+        try:
+            mean = state_dict["mean"]
+            std = state_dict["std"]
+        except KeyError as e:
+            print(f"[WARN] Model doesn't have stored mean/std scaling hyperparams ; using defaults")
+            scaling_hyperparams = ScalingHyperparams.load_default()
+            mean = scaling_hyperparams.mean
+            std = scaling_hyperparams.std
+        else:
+            print(f"[INFO] Loading model's scaling hyperparams...")
+
+        self.load_state_dict(state_dict)
+        self.register_buffer("mean", mean)
+        self.register_buffer("std", std)
+    
+    def get_scaling_hyperparams(self):
+        # type: (DeepMalNetNNModule) -> ScalingHyperparams
+        return ScalingHyperparams(
+            mean=self.mean,
+            std=self.std,
+        )

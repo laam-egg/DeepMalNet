@@ -6,6 +6,7 @@
   - [Feature Extraction](#feature-extraction)
     - [Extract from Custom PE Files](#extract-from-custom-pe-files)
     - [Use the EMBER2024 Dataset](#use-the-ember2024-dataset)
+  - [Hyperparameters: Scaling](#hyperparameters-scaling)
   - [Split Datasets](#split-datasets)
     - [Pre-splits](#pre-splits)
     - [Split it yourself](#split-it-yourself)
@@ -118,6 +119,35 @@ python ./EMBER2024/vectorize_dataset_to_lmdb.py /path/to/lmdb/dir
 This process is time-consuming.
 It took 2 hours 41 mins to complete
 on my Intel i5-8500 CPU.
+
+## Hyperparameters: Scaling
+
+Scaling hyperparameters should be set once
+only, otherwise later training and inference
+will not produce consistent results.
+
+If you're using EMBER2024, the scaling
+hyperparams have been precomputed and are
+the default values in
+
+    $PROJECT_ROOT/DeepMalNet/models/DeepMalNetModel/hyperparams/
+
+If you wish to recompute these params,
+or you're using a custom dataset, be sure
+to run the following command to compute
+the params for consistency with your dataset.
+You could run it with the LMDB containing
+either the training entries alone, or everything
+(train + cv + test).
+
+```sh
+conda activate DeepMalNet
+cd $PROJECT_ROOT
+
+python lmdb/compute-scaling-hyperparameters.py \ 
+    $PATH_TO_YOUR_LMDB \ 
+    $PROJECT_ROOT/DeepMalNet/models/DeepMalNetModel/hyperparams/
+```
 
 ## Split Datasets
 
