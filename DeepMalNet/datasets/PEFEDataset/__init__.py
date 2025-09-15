@@ -11,7 +11,7 @@ msgpack_numpy.patch()
 
 class PEFEDataset(Dataset):
     def __init__(self, lmdb_path, split="train"):
-        # type: (PEFEDataset, str) -> None
+        # type: (PEFEDataset, str, str) -> None
 
         super(PEFEDataset, self).__init__()
 

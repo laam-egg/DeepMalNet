@@ -18,7 +18,7 @@ from ..utils.loss import FocalLoss
 
 class Trainer:
     def __init__(self, lmdb_path, num_epochs=4):
-        # type: (Trainer, str) -> None
+        # type: (Trainer, str, int) -> None
         print(f"Initializing model training...")
         self.NUM_EPOCHS_TO_RUN_THIS_TIME = num_epochs
         self.lmdb_path = lmdb_path

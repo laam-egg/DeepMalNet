@@ -41,5 +41,10 @@ def infer(checkpoint_path, dir_or_file_path):
         file_path = dir_or_file_path
         predict(file_path)
 
+@baker.command
+def ief(checkpoints_dir_path, test_lmdb_dir_path, results_dir):
+    from .ief import ief
+    ief(checkpoints_dir_path, test_lmdb_dir_path, results_dir)
+
 if __name__ == "__main__":
     baker.run()

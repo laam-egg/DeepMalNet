@@ -316,4 +316,63 @@ to the console.
 
 ## Mass Inference and Evaluation
 
-**TODO: `pefe-ief-viz` ???**
+For inference, we use another LMDB as a test set.
+You also need to rescale like this:
+
+```sh
+conda activate DeepMalNet
+cd $PROJECT_ROOT
+
+python lmdb/rescale.py \ 
+    $PATH_TO_THE_TEST_LMDB \ 
+    $PATH_TO_THE_NEW_RESCALED_TEST_LMDB \ 
+    $PROJECT_ROOT/DeepMalNet/models/DeepMalNetModel/hyperparams/
+```
+
+which means, you must use the same scaling
+hyperparameters as that used in training,
+while providing the test LMDB instead.
+The new, rescaled test LMDB will be used
+hereafter.
+
+[`pefe-ief`](https://github.com/pefe-system/pefe-ief)
+is a Python package that supports evaluation of
+PE malware detection models. It has been plugged
+into this project.
+
+You can run `pefe-ief` to evaluate and compare
+several DeepMalNet model checkpoints' performance
+on a specified test set (LMDB) with the following
+command:
+
+```sh
+conda activate DeepMalNet
+cd $PROJECT_ROOT
+
+python -m DeepMalNet ief \ 
+    /path/to/dir/containing/DeepMalNet/checkpoints/i.e.,/those/trained/.pth/files \ 
+    /path/to/rescaled/test/LMDB/dir \ 
+    /path/to/dir/containing/evaluation/results
+```
+
+where `/path/to/dir/containing/evaluation/results` is
+the path to an existing empty directory to contain
+the evaluation results when the command completes.
+
+With that evaluation results directory (hereafter
+"RESULTS directory" or "results_dir"), follow the
+[instructions in the `README` file of `pefe-ief-viz`](https://github.com/pefe-system/pefe-ief-viz)
+to visualize the results.
+
+By the way, I have run evaluation of the pretrained
+models of mine against my own test set. You could
+view the results directly instead of running this
+whole IEF thing. They are located in `$PROJECT_ROOT/DeepMalNet_evaluation_results`.
+Note that **you have to download the HTML file**
+and open it in order for it to display correctly.
+Opening it online risks losing interactive
+elements (I don't know why!).
+
+Note that you still need to follow `pefe-ief-viz`
+instructions if you want to run the notebook
+yourself and/or export it to HTML.
